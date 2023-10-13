@@ -6,13 +6,17 @@ use std::{
     time::Duration,
 };
 
+use web_server::ThreadPool;
+
 fn main() {
     let listner = TcpListener::bind("0.0.0.0:7878").unwrap();
+
+    let pool = ThreadPool::new(10);
 
     for stream in listner.incoming() {
         let stream = stream.unwrap();
 
-        thread::spawn(|| {
+        pool.execute(|| {
             handle_connection(stream);
         });
         // handle_connection(stream);
