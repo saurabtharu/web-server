@@ -11,7 +11,7 @@ pub struct ThreadPool {
     sender: mpsc::Sender<Job>,
 }
 
-struct Job;
+type Job = Box<dyn FnOnce() + Send + 'static>;
 
 impl ThreadPool {
     /// Create a new ThreadPool
@@ -45,6 +45,8 @@ impl ThreadPool {
         /* We still use the () after FnOnce because this FnOnce represents a closure that takes no
          * parameters and returns the unit type () */
     {
+        let job = Box::new(f);
+        self.sender.send(job).unwrap();
     }
 }
 
@@ -57,8 +59,12 @@ struct Worker {
 /// function that takes an id number and returns a Worker instance that holds the id and a thread spawned with an empty closure
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Self {
-        let thread = thread::spawn(|| {
-            receiver;
+        let thread = thread::spawn(move || loop {
+            let job = receiver.lock().unwrap().recv().unwrap();
+
+            println!("Worker {id} got a job; executing.");
+
+            job();
         });
         Worker { id, thread }
     }

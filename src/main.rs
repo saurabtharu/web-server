@@ -11,7 +11,7 @@ use web_server::ThreadPool;
 fn main() {
     let listner = TcpListener::bind("0.0.0.0:7878").unwrap();
 
-    let pool = ThreadPool::new(10);
+    let pool = ThreadPool::new(4);
 
     for stream in listner.incoming() {
         let stream = stream.unwrap();
